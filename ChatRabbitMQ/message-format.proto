@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package ExemploProtocolBuffers;
+
+option java_package = "br.ufs.dcomp.ChatRabbitMQ";
+option java_outer_classname = "MessageProtoBuf";
+
+message Mensagem{
+     required string sender = 1; // Nome do emissor
+     required string date = 2; // Data de envio
+     required string time = 3; // Hora de envio
+     optional string group = 4; // Informa o nome do grupo, se a mensagem for para um grupo
+
+     message Conteudo{
+           required string type = 1; // Tipo do conteúdo no padrão de tipos MIME. Exemplos: "text/plain", "image/png"
+           required bytes body = 2; // Sequência de bytes que compõe o corpo da mensagem
+           optional string name = 3; // Nome do conteúdo, se existente. Exemplos: "logo_ufs.png", "index.html"
+     }
+     required Conteudo content = 5;
+}
