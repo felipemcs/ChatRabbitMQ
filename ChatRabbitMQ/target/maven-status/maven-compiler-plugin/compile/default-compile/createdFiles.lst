@@ -1,5 +1,6 @@
 br/ufs/dcomp/ChatRabbitMQ/MessageProtoBuf.class
 br/ufs/dcomp/ChatRabbitMQ/MessageProtoBuf$Mensagem.class
+br/ufs/dcomp/ChatRabbitMQ/Arquivo.class
 br/ufs/dcomp/ChatRabbitMQ/MessageProtoBuf$1.class
 br/ufs/dcomp/ChatRabbitMQ/ChatRabbitMQ$1.class
 br/ufs/dcomp/ChatRabbitMQ/MessageProtoBuf$Mensagem$ConteudoOrBuilder.class

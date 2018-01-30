@@ -4,11 +4,13 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.rabbitmq.client.*;
 
+import java.io.*;
 import java.io.IOException;
 import java.util.*;
 import java.text.*;
 import br.ufs.dcomp.ChatRabbitMQ.MessageProtoBuf.Mensagem;
 import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+import sun.java2d.loops.GraphicsPrimitive;
 
 import javax.print.DocFlavor;
 
@@ -48,14 +50,6 @@ public class ChatRabbitMQ {
         queueNameG = queueName;
         ChatRabbitMQ.queues[ChatRabbitMQ.numQueues++] = queueName;
 
-//        for(int i = 0; i < 10; i++) {
-//            if(i == ChatRabbitMQ.numUsers - 1);
-//            else {
-//                if(users[i] != null)
-//                    channel.queueBind(queueName, "direct_logs", users[i]);
-//            }
-//        }
-
         channel.queueBind(queueName, "direct_logs", user);
 
         // channel.queueBind(queueName, user, "");
@@ -94,6 +88,7 @@ public class ChatRabbitMQ {
         String last = "";
         String command[];
         String group = "";
+        String filePath = "";
 
         while(true) {
             String sentMessage = kb.nextLine();
@@ -129,6 +124,20 @@ public class ChatRabbitMQ {
                     if(command[0].equals("removeGroup")) {
                         group = command[1];
                         channel.exchangeDelete(group);
+                    }
+                    if(command[0].equals("upload")) {
+                        filePath = command[1];
+                        String ext = "";
+
+                        if(command.length > 2) {
+                            for(int i = 2; i < command.length; i++)
+                                filePath = filePath + " " + command[i];
+                        }
+
+                        Arquivo arquivo = new Arquivo(user, filePath,enviando_direto, enviando_topico, toUser, channel);
+                        Thread t = new Thread(arquivo);
+                        t.start();
+
                     }
                     break;
                 case '#' :
@@ -167,9 +176,9 @@ public class ChatRabbitMQ {
                     channel.basicPublish("direct_logs", toUser, null, sentMessage.getBytes("UTF-8"));
                 }
                 else if(enviando_topico) {
+                    message.setGroup(toUser);
                     sentMessage = "(" + message.getDate() + " às " + message.getTime() + ") " + message.getSender() + "#" + toUser + " diz: " + sentMessage;
                     channel.basicPublish(toUser, "", null, sentMessage.getBytes("UTF-8"));
-
                 }
             }
             //System.out.println(" [x] Sent '" + message + "'");
