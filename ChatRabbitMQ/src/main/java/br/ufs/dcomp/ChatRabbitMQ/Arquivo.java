@@ -63,17 +63,18 @@ public class Arquivo implements Runnable {
                 content.setType("text/plain");
             else
                 for(int i = 0; i < 646; i++)
-                    if(ext.equals(extensions[i])) {
+                    if(ext.equalsIgnoreCase(extensions[i])) {
                         content.setType(mimeTypes[i]);
                         break;
                     }
             content.setBody(ByteString.copyFrom(this.fileContent));
-            content.setName(filePath.substring(filePath.lastIndexOf("/")));
+            content.setName(filePath.substring(filePath.lastIndexOf("/") + 1));
+            message.setContent(content);
             if(this.enviando_direto)
-                this.channel.basicPublish("direct_logs", this.exName, null, this.fileContent);
+                this.channel.basicPublish("direct_logs", this.exName, null, message.build().toByteArray());
 
             if(this.enviando_topico)
-                channel.basicPublish(this.exName, "", null, this.fileContent);
+                channel.basicPublish(this.exName, "", null, message.build().toByteArray());
 
         } catch (Exception e){
 

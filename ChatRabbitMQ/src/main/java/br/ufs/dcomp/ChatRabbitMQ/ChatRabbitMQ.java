@@ -72,7 +72,22 @@ public class ChatRabbitMQ {
                         channel.queueUnbind(queueNameG, command[2], "");
                 }
                 else {
-                    System.out.println("\n" + recMessage);
+                    Mensagem rMes = Mensagem.parseFrom(body);
+                    if(!rMes.getContent().hasName()) {
+                        if(envelope.getExchange().equals("direct_logs"))
+                            recMessage = "(" + rMes.getDate() + " às " + rMes.getTime() + ") " + rMes.getSender() + " diz: " + rMes.getContent().getBody().toStringUtf8();
+                        else
+                            recMessage = "(" + rMes.getDate() + " às " + rMes.getTime() + ") " + rMes.getSender() + "#" + rMes.getGroup() + " diz: " + rMes.getContent().getBody().toStringUtf8();
+                        System.out.println("\n" + recMessage);
+                    }
+                    else {
+                        FileOutputStream stream = new FileOutputStream(rMes.getContent().getName());
+                        try {
+                            stream.write(rMes.getContent().getBody().toByteArray());
+                        } finally {
+                            stream.close();
+                        }
+                    }
                     if (enviando_direto && !toUser.equals(""))
                         System.out.print("@" + toUser + ">> ");
                     else if (enviando_topico && !toUser.equals(""))
@@ -171,14 +186,13 @@ public class ChatRabbitMQ {
                 Mensagem.Conteudo.Builder content = Mensagem.Conteudo.newBuilder();
                 content.setType("text/plain");
                 content.setBody(ByteString.copyFrom(sentMessage.getBytes("UTF-8")));
+                message.setContent(content);
                 if(enviando_direto) {
-                    sentMessage = "(" + message.getDate() + " às " + message.getTime() + ") " + message.getSender() + " diz: " + sentMessage;
-                    channel.basicPublish("direct_logs", toUser, null, sentMessage.getBytes("UTF-8"));
+                    channel.basicPublish("direct_logs", toUser, null, message.build().toByteArray());
                 }
                 else if(enviando_topico) {
                     message.setGroup(toUser);
-                    sentMessage = "(" + message.getDate() + " às " + message.getTime() + ") " + message.getSender() + "#" + toUser + " diz: " + sentMessage;
-                    channel.basicPublish(toUser, "", null, sentMessage.getBytes("UTF-8"));
+                    channel.basicPublish(toUser, "", null, message.build().toByteArray());
                 }
             }
             //System.out.println(" [x] Sent '" + message + "'");
