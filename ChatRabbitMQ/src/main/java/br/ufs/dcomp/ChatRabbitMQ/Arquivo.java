@@ -18,10 +18,10 @@ public class Arquivo implements Runnable {
     private FileInputStream fileInputStream;
     private boolean enviando_direto;
     private boolean enviando_topico;
-    private String exName;
+    private String toUser;
     private Channel channel;
 
-    public Arquivo(String user, String filePath, boolean enviando_direto, boolean enviando_topico, String exName, Channel channel) throws Exception {
+    public Arquivo(String user, String filePath, boolean enviando_direto, boolean enviando_topico, String toUser, Channel channel) throws Exception {
         this.user = user;
         this.filePath = filePath;
         this.file = file = new File(filePath);
@@ -31,7 +31,7 @@ public class Arquivo implements Runnable {
         fileInputStream.read(fileContent, 0, (int) byteLength);
         this.enviando_direto = enviando_direto;
         this.enviando_topico = enviando_topico;
-        this.exName = exName;
+        this.toUser = toUser;
         this.channel = channel;
     }
 
@@ -70,14 +70,29 @@ public class Arquivo implements Runnable {
             content.setBody(ByteString.copyFrom(this.fileContent));
             content.setName(filePath.substring(filePath.lastIndexOf("/") + 1));
             message.setContent(content);
-            if(this.enviando_direto)
-                this.channel.basicPublish("direct_logs", this.exName, null, message.build().toByteArray());
+            if(this.enviando_direto) {
+                System.out.println("\nUploading file \"" + this.filePath + "\" to @" + this.toUser + "...");
+                System.out.print("@" + this.toUser + ">> ");
+                this.channel.basicPublish("", this.toUser + "_files", null, message.build().toByteArray());
+            }
 
-            if(this.enviando_topico)
-                channel.basicPublish(this.exName, "", null, message.build().toByteArray());
+            if(this.enviando_topico) {
+                System.out.println("\nUploading file \"" + this.filePath + "\" to #" + this.toUser + "...");
+                System.out.print("#" + this.toUser + ">> ");
+                this.channel.basicPublish(this.toUser, "", null, message.build().toByteArray());
+            }
 
         } catch (Exception e){
 
+        }
+
+        if(this.enviando_direto) {
+            System.out.println("\nFile \"" + this.filePath + "\" is available to @" + this.toUser + "...");
+            System.out.print("@" + this.toUser + ">> ");
+        }
+        if(this.enviando_topico) {
+            System.out.println("\nFile \"" + this.filePath + "\" is available to #" + this.toUser + "...");
+            System.out.print("#" + this.toUser + ">> ");
         }
     }
 
