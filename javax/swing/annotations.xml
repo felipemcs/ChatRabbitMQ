@@ -1,0 +1,5 @@
+<root>
+    <item name='javax.swing.JComboBox'>
+        <annotation name='java.lang.Deprecated'/>
+    </item>
+</root>
