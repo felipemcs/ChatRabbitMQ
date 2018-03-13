@@ -1,9 +1,5 @@
 package br.ufs.dcomp.ChatRabbitMQ;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.rabbitmq.client.*;
@@ -17,13 +13,7 @@ import java.net.URLConnection;
 import java.util.*;
 import java.text.*;
 import br.ufs.dcomp.ChatRabbitMQ.MessageProtoBuf.Mensagem;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
-import sun.java2d.loops.GraphicsPrimitive;
 import org.apache.commons.codec.binary.Base64;
-
-import javax.print.DocFlavor;
-import javax.swing.*;
-import javax.xml.bind.DatatypeConverter;
 
 public class ChatRabbitMQ {
     private static String toUser = "";
@@ -44,7 +34,6 @@ public class ChatRabbitMQ {
     public static boolean recebendo_arquivo = false;
 
     public static void main(String[] argv) throws Exception {
-        //Client c = new Client("http://54.201.113.218:15672/api/", "test", "test");
 
         ConnectionFactory factory = new ConnectionFactory();
         //factory.setUri("amqp://knnnagpk:-IDbljg1wv9R7QU117XFmEsxNJTXj_xc@elephant.rmq.cloudamqp.com/knnnagpk");
@@ -58,9 +47,7 @@ public class ChatRabbitMQ {
         System.out.print("User: ");
         String user = kb.nextLine();
         userG = user;
-        //int userNum = numUsers++;
         ChatRabbitMQ.users[ChatRabbitMQ.numUsers++] = user;
-        //System.out.println(ChatRabbitMQ.numUsers);
 
         //channel.exchangeDeclare("", BuiltinExchangeType.FANOUT);
         String messagesQueue = user + "_messages";
@@ -70,11 +57,6 @@ public class ChatRabbitMQ {
         messagesQueueG = messagesQueue;
         filesQueueG = filesQueue;
         ChatRabbitMQ.queues[ChatRabbitMQ.numQueues++] = messagesQueue;
-
-        //channel.queueBind(messagesQueue, "direct_logs", user);
-        //channel.queueBind(filesQueue, "direct_logs", user);
-
-        // channel.queueBind(queueName, user, "");
 
         System.out.print(">> ");
 
@@ -94,12 +76,18 @@ public class ChatRabbitMQ {
                     else if(command[0].equals("delFromGroup")) {
                         channel1.queueUnbind(messagesQueueG, command[2], "");
                         channel1.queueUnbind(filesQueueG, command[2], "");
+                        if(enviando_topico && toUser.equals(command[2]))
+                        {
+                            enviando_topico = enviando_direto = false;
+                            toUser = "";
+                            System.out.print("\n>> ");
+                        }
                     }
                     else if(command[0].equals("removeGroup")) {
                         if(toUser.equals(command[1])) {
                             enviando_topico = enviando_direto = false;
                             toUser = "";
-                            System.out.println(">> ");
+                            System.out.print("\n>> ");
                         }
                     }
                 }
@@ -205,18 +193,14 @@ public class ChatRabbitMQ {
                         groups[numGroups++] = command[1];
                         group = command[1];
                         channel1.exchangeDeclare(group, BuiltinExchangeType.FANOUT);
-                        //channel2.exchangeDeclare(group, BuiltinExchangeType.FANOUT);
                         channel1.queueBind(messagesQueue, group, "");
                         channel1.queueBind(filesQueue, group, "");
-                        //toUser = sentMessage.substring(sentMessage.lastIndexOf(" ") + 1);
                         groupMembers[numGroupMembers++] = user;
                     }
                     if(command[0].equals("toGroup")) {
                         group = command[1];
                         groupMembers[numGroupMembers++] = command[2];
                         channel1.basicPublish("", command[2] + "_messages", null, sentMessage.getBytes("UTF-8"));
-                        //channel1.queueBind(messagesQueue, command[1], "");
-                        //channel2.queueBind(filesQueue, command[1], "");
                     }
                     if(command[0].equals("delFromGroup")) {
                         group = command[2];
@@ -236,7 +220,6 @@ public class ChatRabbitMQ {
                     }
                     if(command[0].equals("upload")) {
                         filePath = command[1];
-                        String ext = "";
 
                         if(command.length > 2) {
                             for(int i = 2; i < command.length; i++)
@@ -277,8 +260,7 @@ public class ChatRabbitMQ {
                         String names = "";
 
                         String[] split = result.split("\"name\":\"");
-                        //c.addItem((String)"");
-                        // skipping the first element "[{" or ""
+
                         for(int i=1; i<split.length; i++)
                         {
                             String nameRaw = split[i];
@@ -293,18 +275,6 @@ public class ChatRabbitMQ {
                         if(!names.equals(""))
                             names = names.substring(0, names.lastIndexOf(','));
                         System.out.print(names + "\n");
-
-                        /*String json = ""; // result.substring(result.indexOf('{'), result.lastIndexOf('}') + 1);
-                        for(int i = 1; i < result.length() - 1; i++) {
-                            json = json + result.charAt(i);
-                            /*if(result.charAt(i+1) == '"')
-                                json = json + '\';
-                        }
-
-                        JsonReader reader = new JsonReader(new StringReader(json));
-                        reader.setLenient(true);
-
-                        JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject(); */
                     }
                     if(command[0].equals("listUsers")) {
 
@@ -330,34 +300,9 @@ public class ChatRabbitMQ {
                         }
                         String result = sb.toString();
                         String names = "";
-                        int aux = 0;
-
-                        boolean hasName = false;
-                        if(!result.equals("[]"))
-                            hasName = true;
-                        /*while(hasName) {
-                            int iName = result.indexOf("name") + 7;
-                            if(aux%2 != 0)
-                                result = (result.substring(result.indexOf("name"))).substring((result.substring(result.indexOf("name"))).indexOf(','));
-                            if(iName != 6 && aux%2 == 0) {
-                                int iV = 0;
-                                for (int i = iName; i < result.length(); i++) {
-                                    if (result.charAt(i) == ',') {
-                                        iV = i;
-                                        break;
-                                    }
-                                }
-                                names = names + result.substring(iName, iV - 7) + ", ";
-                                result = result.substring(iV + 1);
-                            }
-                            else if(iName == 6)
-                                hasName = false;
-                            aux++;
-                        }*/
 
                         String[] split = result.split("\"name\":\"");
-                        //c.addItem((String)"");
-                        // skipping the first element "[{" or ""
+
                         for(int i=1; i<split.length; i++)
                         {
                             String nameRaw = split[i];
@@ -371,18 +316,6 @@ public class ChatRabbitMQ {
 
                         names = names.substring(0, names.lastIndexOf(','));
                         System.out.print(names + "\n");
-
-                        /*String json = ""; // result.substring(result.indexOf('{'), result.lastIndexOf('}') + 1);
-                        for(int i = 1; i < result.length() - 1; i++) {
-                            json = json + result.charAt(i);
-                            /*if(result.charAt(i+1) == '"')
-                                json = json + '\';
-                        }
-
-                        JsonReader reader = new JsonReader(new StringReader(json));
-                        reader.setLenient(true);
-
-                        JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject(); */
                     }
                     break;
                 case '#' :
@@ -395,8 +328,6 @@ public class ChatRabbitMQ {
                     last = "";
                     break;
             }
-
-            //String message = kb.nextLine();
 
             if(enviando_direto)
                 System.out.print("@" + toUser + ">> ");
@@ -425,7 +356,6 @@ public class ChatRabbitMQ {
                     channel1.basicPublish(toUser, "", null, message.build().toByteArray());
                 }
             }
-            //System.out.println(" [x] Sent '" + message + "'");
         }
     }
 }
